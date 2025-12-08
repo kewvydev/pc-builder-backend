@@ -25,16 +25,20 @@ public class Build {
     private String id;
     private String name;
     @Builder.Default
-    private Map<ComponentCategory, Component> selections = new EnumMap<>(ComponentCategory.class);
+    private Map<ComponentCategory, Component> selectedComponents = new EnumMap<>(ComponentCategory.class);
     @Builder.Default
-    private List<String> compatibilityAlerts = new ArrayList<>();
+    private List<String> alerts = new ArrayList<>();
     @Builder.Default
     private List<String> recommendations = new ArrayList<>();
     private Double estimatedPowerDraw;
     private Double budget;
+    private Double totalPrice;
 
     public double getTotalPrice() {
-        return selections.values().stream()
+        if (totalPrice != null) {
+            return totalPrice;
+        }
+        return selectedComponents.values().stream()
                 .mapToDouble(Component::getPrice)
                 .sum();
     }
@@ -43,20 +47,23 @@ public class Build {
         if (component == null || component.getCategory() == null) {
             return;
         }
-        selections.put(component.getCategory(), component);
+        selectedComponents.put(component.getCategory(), component);
     }
 
     public Optional<Component> getComponent(ComponentCategory category) {
-        return Optional.ofNullable(selections.get(category));
+        return Optional.ofNullable(selectedComponents.get(category));
     }
 
     public boolean isComplete() {
-        return selections.size() == ComponentCategory.values().length;
+        return selectedComponents.size() == ComponentCategory.values().length;
+    }
+
+    // Convenience methods for backward compatibility
+    public Map<ComponentCategory, Component> getSelections() {
+        return selectedComponents;
+    }
+
+    public List<String> getCompatibilityAlerts() {
+        return alerts;
     }
 }
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-package service.filter;
+package com.pcBuilder.backend.service.filter;
 
 import com.pcBuilder.backend.model.component.ComponentCategory;
 import lombok.Builder;

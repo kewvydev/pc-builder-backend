@@ -1,113 +1,339 @@
-# PC Builder+ Backend
+# PCBuilder+ Backend 🖥️
 
-Backend API for the PC Builder+ application - A comprehensive PC component selection and compatibility checking system.
+**Backend REST API para PCBuilder+** - Sistema de recomendación y ensamblaje de PCs con validación de compatibilidad.
 
-## Features
+[![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue.svg)](https://www.postgresql.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-- Component catalog management
-- Build creation and validation
-- Compatibility checking
-- Price tracking
-- Component filtering and search
-- Automatic data scraping from PCPartPicker
+---
 
-## Tech Stack
+## 🚀 Estado del Proyecto
 
-- **Java 17+** with Spring Boot
-- **PostgreSQL** (Neon Database)
-- **Maven** for dependency management
-- **Python** for data import scripts
+✅ **Backend 100% Funcional** - Listo para conectarse con el frontend
 
-## Getting Started
+### Características Implementadas
 
-### Prerequisites
+- ✅ **27 Endpoints REST** completamente funcionales
+- ✅ **Manejo global de excepciones** con respuestas JSON estandarizadas
+- ✅ **Validación automática** de requests con Spring Validation
+- ✅ **DTOs** para separación de capas (dominio vs API)
+- ✅ **CORS configurado** para desarrollo con frontend
+- ✅ **PostgreSQL** como base de datos con soporte para Neon
+- ✅ **Validación de compatibilidad** entre componentes
+- ✅ **Sistema de recomendaciones** automático
+- ✅ **Búsqueda y filtrado avanzado** de componentes
 
-- Java 17 or higher
-- Maven 3.6+
-- PostgreSQL database (or Neon account)
-- Python 3.x (for dataset import scripts)
+---
 
-### Environment Configuration
+## 📋 Contenido
 
-1. Copy the `.env.example` file to `.env`:
+- [Inicio Rápido](#-inicio-rápido)
+- [API Endpoints](#-api-endpoints)
+- [Arquitectura](#-arquitectura)
+- [Base de Datos](#-base-de-datos)
+- [Desarrollo](#-desarrollo)
 
-   ```bash
-   cp .env.example .env
-   ```
+---
 
-2. Fill in your actual credentials in the `.env` file:
+## 🏃 Inicio Rápido
 
-   - **Database credentials**: Get these from your PostgreSQL/Neon database
+### Requisitos
 
-3. The application will automatically load environment variables from `.env` file.
+- Java 17 o superior
+- Maven 3.8+ (incluido)
+- PostgreSQL 15+ o cuenta en [Neon](https://neon.tech)
+- Python 3.8+ (opcional, para cargar datos)
 
-### Running the Application
+### 1. Clonar y Configurar
 
-1. Install dependencies:
+```bash
+cd backend
 
-   ```bash
-   mvn clean install
-   ```
+# Crear archivo .env con tus credenciales de base de datos
+cp .env.example .env
+# Editar .env con tus datos
+```
 
-2. Run the application:
+### 2. Configurar Base de Datos
 
-   ```bash
-   mvn spring-boot:run
-   ```
+```bash
+# PostgreSQL Local
+createdb pcbuilder
 
-   The server will start on `http://localhost:8080` (or the port specified in `SERVER_PORT`).
+# El esquema se crea automáticamente al iniciar
+```
 
-### Database Setup
+### 3. Iniciar el Backend
 
-1. The application will automatically create the necessary tables using the `schema.sql` file.
+```bash
+# Windows
+.\mvnw.cmd spring-boot:run
 
-2. To import the dataset from CSV files:
-   ```bash
-   cd dataset
-   pip install psycopg2-binary python-slugify
-   python ../dataset-script.py --dsn "postgresql://user:password@host:port/database"
-   ```
+# Mac/Linux
+./mvnw spring-boot:run
+```
 
-## API Endpoints
+El servidor estará disponible en `http://localhost:8080`
 
-### Components
+### 4. (Opcional) Cargar Datos de Ejemplo
 
-- `GET /api/components` - List all components with filtering options
-- `GET /api/components/{id}` - Get component by ID
-- `GET /api/components/category/{category}` - Get components by category
-- `GET /api/components/search` - Search components by name
+```bash
+pip install -r requirements.txt
+python load-dataset.py
+```
 
-### Builds
+### 5. Probar la API
 
-- `POST /api/builds` - Create a new build
-- `GET /api/builds/{id}` - Get build by ID
-- `PUT /api/builds/{id}` - Update build
-- `DELETE /api/builds/{id}` - Delete build
+```bash
+curl http://localhost:8080/api/components
+curl http://localhost:8080/api/components/cpu
+```
 
-## Configuration
+**📖 Para instrucciones detalladas, ver [GETTING_STARTED.md](GETTING_STARTED.md)**
 
-Key configuration properties in `application.properties`:
+---
 
-- **Storage**: File storage locations for data and logs
-- **Scraper**: Web scraping settings for data collection
-- **Database**: PostgreSQL connection settings
+## 🌐 API Endpoints
 
-All sensitive credentials are managed through environment variables.
+### Components API (`/api/components`)
 
-## Security Notes
+#### CRUD
 
-- Never commit the `.env` file to version control
-- Keep your database credentials and API keys secure
-- Use environment variables for all sensitive configuration
+```
+GET    /api/components                    - Listar todos
+GET    /api/components/{category}         - Por categoría
+GET    /api/components/{category}/{id}    - Uno específico
+POST   /api/components                    - Crear
+PUT    /api/components/{id}               - Actualizar
+DELETE /api/components/{id}               - Eliminar
+```
 
-## Contributing
+#### Búsqueda y Filtrado
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+```
+GET    /api/components/search?query=...           - Buscar por nombre
+GET    /api/components/filter?brand=...           - Filtrar por criterios
+GET    /api/components/{cat}/filter?minPrice=...  - Filtrar por precio
+GET    /api/components/brands                     - Listar marcas
+```
 
-## License
+### Builds API (`/api/builds`)
 
-[Add your license here]
+#### CRUD
+
+```
+POST   /api/builds                        - Crear build
+GET    /api/builds/{id}                   - Obtener por ID
+GET    /api/builds                        - Listar todos
+PUT    /api/builds/{id}                   - Actualizar
+DELETE /api/builds/{id}                   - Eliminar
+```
+
+#### Gestión de Componentes
+
+```
+PUT    /api/builds/{id}/components               - Agregar componente
+DELETE /api/builds/{id}/components/{category}    - Remover componente
+```
+
+#### Validación
+
+```
+POST   /api/builds/{id}/validate          - Validar compatibilidad
+GET    /api/builds/{id}/alerts            - Ver alertas
+GET    /api/builds/{id}/recommendations   - Ver recomendaciones
+```
+
+---
+
+## 🏗️ Arquitectura
+
+```
+src/main/java/com/pcBuilder/backend/
+├── controller/          # REST Controllers
+├── service/             # Lógica de negocio
+├── repository/          # Acceso a datos (JPA)
+├── model/               # Entidades y objetos de dominio
+├── dto/                 # Data Transfer Objects
+├── mapper/              # Conversión Domain ↔ DTO
+├── exception/           # Excepciones personalizadas
+└── config/              # Configuración (CORS, etc.)
+```
+
+### Capas
+
+1. **Controller**: Maneja HTTP requests/responses, valida entrada
+2. **Service**: Lógica de negocio, validación de compatibilidad
+3. **Repository**: Acceso a PostgreSQL vía Spring Data JPA
+4. **Mapper**: Convierte entre objetos de dominio y DTOs
+5. **Exception Handler**: Manejo centralizado de errores
+
+---
+
+## 🗄️ Base de Datos
+
+### Esquema
+
+```
+components              - Componentes de hardware
+├── component_attributes - Atributos técnicos (specs)
+└── component_tags      - Tags para búsqueda
+
+builds                  - Builds de usuarios
+├── build_components    - Componentes seleccionados
+├── build_alerts        - Alertas de compatibilidad
+└── build_recommendations - Recomendaciones
+
+scraping_logs          - Logs del scraper (futuro)
+```
+
+### Categorías Soportadas
+
+- `CPU` - Procesadores
+- `GPU` - Tarjetas gráficas
+- `MOTHERBOARD` - Placas base
+- `RAM` - Memoria RAM
+- `STORAGE` - Almacenamiento (SSD/HDD)
+- `PSU` - Fuentes de poder
+- `CASE` - Gabinetes
+
+---
+
+## 🛠️ Desarrollo
+
+### Estructura del Proyecto
+
+```
+backend/
+├── src/main/java/           # Código fuente
+├── src/main/resources/      # Configuración
+│   ├── application.properties
+│   └── schema.sql
+├── src/test/java/           # Tests
+├── pom.xml                  # Dependencias Maven
+├── .env                     # Variables de entorno (no comitear)
+├── GETTING_STARTED.md       # Guía de inicio
+└── IMPLEMENTATION_SUMMARY.md # Resumen técnico
+```
+
+### Tecnologías
+
+- **Spring Boot 3.3.4** - Framework principal
+- **Spring Data JPA** - ORM para PostgreSQL
+- **Spring Validation** - Validación de datos
+- **Lombok** - Reduce boilerplate
+- **PostgreSQL** - Base de datos
+- **JSoup** - Web scraping (futuro)
+
+### Variables de Entorno
+
+Crear `.env` con:
+
+```env
+# Base de datos
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=pcbuilder
+PGUSER=postgres
+PGPASSWORD=tu_password
+
+# Servidor
+SERVER_PORT=8080
+```
+
+### Ejecutar Tests
+
+```bash
+./mvnw test
+```
+
+### Build para Producción
+
+```bash
+./mvnw clean package
+java -jar target/backend-0.0.1-SNAPSHOT.jar
+```
+
+---
+
+## 📝 Validación de Compatibilidad
+
+El sistema valida automáticamente:
+
+1. **Compatibilidad de Socket** (CPU ↔ Motherboard)
+2. **Tipo de RAM** (DDR4/DDR5)
+3. **Consumo de Energía vs PSU**
+4. **Tamaño del Gabinete**
+
+Y genera recomendaciones basadas en:
+
+- Componentes faltantes
+- Presupuesto disponible
+- Balance de configuración
+
+---
+
+## 🤝 Integración con Frontend
+
+### Ejemplo de Uso (TypeScript)
+
+```typescript
+// Obtener componentes por categoría
+const response = await fetch("http://localhost:8080/api/components/cpu");
+const cpus = await response.json();
+
+// Crear un build
+const build = await fetch("http://localhost:8080/api/builds", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Mi PC Gaming",
+    budget: 1500,
+    components: [
+      { category: "cpu", componentId: "intel-i7-12700k" },
+      { category: "gpu", componentId: "nvidia-rtx-4070" },
+    ],
+  }),
+});
+```
+
+Ver [GETTING_STARTED.md](GETTING_STARTED.md) para ejemplos completos.
+
+---
+
+## 📚 Documentación Adicional
+
+- [GETTING_STARTED.md](GETTING_STARTED.md) - Guía completa de inicio
+- [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) - Detalles técnicos de implementación
+- [schema.sql](src/main/resources/schema.sql) - Esquema de base de datos
+
+---
+
+## 🔜 Próximas Características
+
+- [ ] Web scraping automático con JSoup
+- [ ] Autenticación con Spring Security
+- [ ] API Documentation con Swagger/OpenAPI
+- [ ] WebSocket para updates en tiempo real
+- [ ] Caché con Redis
+- [ ] Monitoreo con Spring Actuator
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia MIT.
+
+---
+
+## 👨‍💻 Autor
+
+Desarrollado para PCBuilder+ - Sistema inteligente de ensamblaje de PCs
+
+---
+
+## 🆘 Soporte
+
+¿Problemas? Ver [Troubleshooting](GETTING_STARTED.md#-troubleshooting) en la guía de inicio.

@@ -40,10 +40,19 @@ public enum ComponentCategory {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown component category: " + value));
     }
+
+    /**
+     * Resolve a category from either its enum name or slug representation.
+     * Returns null if the value is invalid instead of throwing an exception.
+     */
+    public static ComponentCategory fromString(String value) {
+        if (value == null) {
+            return null;
+        }
+        return Arrays.stream(values())
+                .filter(category -> category.name().equalsIgnoreCase(value)
+                        || category.slug.equalsIgnoreCase(value))
+                .findFirst()
+                .orElse(null);
+    }
 }
-
-
-
-
-
-
