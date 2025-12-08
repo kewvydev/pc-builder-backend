@@ -31,3 +31,18 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local
+
+### Storage and Data ###
+storage/
+dataset/
+
+### Temporary Files ###
+tmp*.html
+tmp*.js
+*.tmp
+chunk-*.js

@@ -1,2 +1,21 @@
-/mvnw text eol=lf
-*.cmd text eol=crlf
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Java sources
+*.java text diff=java
+*.gradle text diff=java
+*.gradle.kts text diff=java
+
+# Properties files
+*.properties text
+
+# XML files
+*.xml text
+
+# SQL files
+*.sql text
+
+# Prevent .env files from being committed
+.env filter=git-crypt diff=git-crypt
+.env.* filter=git-crypt diff=git-crypt
+!.env.example
