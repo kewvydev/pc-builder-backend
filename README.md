@@ -38,7 +38,6 @@ Backend API for the PC Builder+ application - A comprehensive PC component selec
 2. Fill in your actual credentials in the `.env` file:
 
    - **Database credentials**: Get these from your PostgreSQL/Neon database
-   - **APIFY_TOKEN**: Only needed if you plan to use the Apify scraper (optional)
 
 3. The application will automatically load environment variables from `.env` file.
 
@@ -90,7 +89,7 @@ Backend API for the PC Builder+ application - A comprehensive PC component selec
 Key configuration properties in `application.properties`:
 
 - **Storage**: File storage locations for data and logs
-- **Scraper**: Web scraping settings (Apify or JSoup)
+- **Scraper**: Web scraping settings for data collection
 - **Database**: PostgreSQL connection settings
 
 All sensitive credentials are managed through environment variables.
