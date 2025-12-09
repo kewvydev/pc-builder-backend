@@ -1,5 +1,6 @@
 package com.pcBuilder.backend.service;
 
+import com.pcBuilder.backend.dto.ComponentListDto;
 import com.pcBuilder.backend.exception.InvalidCategoryException;
 import com.pcBuilder.backend.exception.ResourceNotFoundException;
 import com.pcBuilder.backend.model.component.Component;
@@ -8,12 +9,16 @@ import com.pcBuilder.backend.model.component.ComponentEntity;
 import com.pcBuilder.backend.repository.ComponentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -24,14 +29,119 @@ import java.util.stream.Collectors;
 public class ComponentService {
 
     private static final Logger log = LoggerFactory.getLogger(ComponentService.class);
+    private static final int MAX_PAGE_SIZE = 200;
+
     private final ComponentRepository componentRepository;
 
     public ComponentService(ComponentRepository componentRepository) {
         this.componentRepository = componentRepository;
     }
 
+    // ==================== OPTIMIZED LIGHTWEIGHT METHODS ====================
+    // Use these for listing/browsing - they return lightweight DTOs
+
     /**
-     * Get all components from the database.
+     * Get components by category with lightweight DTO (FASTEST - no
+     * attributes/tags).
+     * This is the recommended method for listing components.
+     */
+    @Transactional(readOnly = true)
+    public List<ComponentListDto> getByTypeLightweight(String type) {
+        ComponentCategory category = ComponentCategory.fromString(type);
+        if (category == null) {
+            throw new InvalidCategoryException(type);
+        }
+        return componentRepository.findByCategoryLightweight(category.name());
+    }
+
+    /**
+     * Get components by category with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> getByTypeLightweight(String type, int page, int size, String sortBy, String sortDir) {
+        ComponentCategory category = ComponentCategory.fromString(type);
+        if (category == null) {
+            throw new InvalidCategoryException(type);
+        }
+        Pageable pageable = createPageable(page, size, sortBy, sortDir);
+        return componentRepository.findByCategoryLightweight(category.name(), pageable);
+    }
+
+    /**
+     * Get all components with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> getAllLightweight(int page, int size, String sortBy, String sortDir) {
+        Pageable pageable = createPageable(page, size, sortBy, sortDir);
+        return componentRepository.findAllLightweight(pageable);
+    }
+
+    /**
+     * Search components by name with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> searchByNameLightweight(String searchText, int page, int size) {
+        Pageable pageable = createPageable(page, size, "name", "asc");
+        return componentRepository.searchByNameLightweight(searchText, pageable);
+    }
+
+    /**
+     * Search components by name and category with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> searchByNameAndCategoryLightweight(String searchText, String category, int page,
+            int size) {
+        ComponentCategory cat = ComponentCategory.fromString(category);
+        if (cat == null) {
+            throw new InvalidCategoryException(category);
+        }
+        Pageable pageable = createPageable(page, size, "name", "asc");
+        return componentRepository.searchByNameAndCategoryLightweight(searchText, cat.name(), pageable);
+    }
+
+    /**
+     * Find components by category and price range with pagination (lightweight
+     * DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> findByCategoryAndPriceRangeLightweight(String category, double minPrice,
+            double maxPrice, int page, int size) {
+        ComponentCategory cat = ComponentCategory.fromString(category);
+        if (cat == null) {
+            throw new InvalidCategoryException(category);
+        }
+        Pageable pageable = createPageable(page, size, "price", "asc");
+        return componentRepository.findByCategoryAndPriceBetweenLightweight(
+                cat.name(),
+                BigDecimal.valueOf(minPrice),
+                BigDecimal.valueOf(maxPrice),
+                pageable);
+    }
+
+    /**
+     * Find components by brand with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> findByBrandLightweight(String brand, int page, int size) {
+        Pageable pageable = createPageable(page, size, "name", "asc");
+        return componentRepository.findByBrandLightweight(brand, pageable);
+    }
+
+    /**
+     * Find components in stock with pagination (lightweight DTO).
+     */
+    @Transactional(readOnly = true)
+    public Page<ComponentListDto> findInStockLightweight(int page, int size) {
+        Pageable pageable = createPageable(page, size, "name", "asc");
+        return componentRepository.findByInStockTrueLightweight(pageable);
+    }
+
+    // ==================== FULL ENTITY METHODS ====================
+    // Use these when you need the complete component with attributes/tags
+
+    /**
+     * Get all components from the database (DEPRECATED for large datasets).
+     * Prefer getAllLightweight() for listings.
      */
     @Transactional(readOnly = true)
     public List<Component> getAll() {
@@ -41,7 +151,9 @@ public class ComponentService {
     }
 
     /**
-     * Get components by category/type.
+     * Get components by category/type with full details (attributes + tags).
+     * Uses optimized two-query approach to avoid Cartesian Product.
+     * For listings without attributes, prefer getByTypeLightweight().
      */
     @Transactional(readOnly = true)
     public List<Component> getByType(String type) {
@@ -49,8 +161,32 @@ public class ComponentService {
         if (category == null) {
             throw new InvalidCategoryException(type);
         }
-        return componentRepository.findByCategory(category.name()).stream()
-                .map(ComponentEntity::toDomain)
+
+        // Use optimized two-query approach to avoid Cartesian Product
+        // This is MUCH faster than a single query with EntityGraph on multiple
+        // collections
+        List<ComponentEntity> entities = componentRepository.findByCategoryWithAttributes(category.name());
+
+        if (entities.isEmpty()) {
+            return List.of();
+        }
+
+        // Second query: get tags for these components
+        List<String> ids = entities.stream().map(ComponentEntity::getId).collect(Collectors.toList());
+        List<ComponentEntity> entitiesWithTags = componentRepository.findByIdsWithTags(ids);
+
+        // Merge tags into entities
+        Map<String, ComponentEntity> tagMap = entitiesWithTags.stream()
+                .collect(Collectors.toMap(ComponentEntity::getId, e -> e));
+
+        return entities.stream()
+                .map(entity -> {
+                    ComponentEntity withTags = tagMap.get(entity.getId());
+                    if (withTags != null) {
+                        entity.setTags(withTags.getTags());
+                    }
+                    return entity.toDomain();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -71,6 +207,22 @@ public class ComponentService {
             throw new ResourceNotFoundException(
                     String.format("Component with id %s not found in category %s", id, type));
         }
+
+        return entity.toDomain();
+    }
+
+    /**
+     * Get component by ID with full details (attributes + tags).
+     */
+    @Transactional(readOnly = true)
+    public Component getByIdWithFullDetails(String id) {
+        // Get with attributes first
+        ComponentEntity entity = componentRepository.findByIdWithAttributes(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Component", id));
+
+        // Get tags separately
+        componentRepository.findByIdWithTags(id)
+                .ifPresent(e -> entity.setTags(e.getTags()));
 
         return entity.toDomain();
     }
@@ -137,16 +289,23 @@ public class ComponentService {
     }
 
     /**
-     * Get all distinct brands.
+     * Get all distinct brands (optimized query).
      */
     @Transactional(readOnly = true)
     public List<String> getAllBrands() {
-        return componentRepository.findAll().stream()
-                .map(ComponentEntity::getBrand)
-                .filter(brand -> brand != null && !brand.isBlank())
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
+        return componentRepository.findAllDistinctBrands();
+    }
+
+    /**
+     * Get all distinct brands by category.
+     */
+    @Transactional(readOnly = true)
+    public List<String> getBrandsByCategory(String category) {
+        ComponentCategory cat = ComponentCategory.fromString(category);
+        if (cat == null) {
+            throw new InvalidCategoryException(category);
+        }
+        return componentRepository.findDistinctBrandsByCategory(cat.name());
     }
 
     /**
@@ -266,5 +425,20 @@ public class ComponentService {
     public void deleteAll() {
         componentRepository.deleteAll();
         log.warn("Deleted all components from database");
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    /**
+     * Create a Pageable with validation.
+     */
+    private Pageable createPageable(int page, int size, String sortBy, String sortDir) {
+        int validPage = Math.max(0, page);
+        int validSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
+
+        String validSortBy = sortBy != null && !sortBy.isBlank() ? sortBy : "name";
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+
+        return PageRequest.of(validPage, validSize, Sort.by(direction, validSortBy));
     }
 }

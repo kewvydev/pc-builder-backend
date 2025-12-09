@@ -1,9 +1,12 @@
 package com.pcBuilder.backend.model.component;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.io.Serializable;
 
@@ -21,6 +24,9 @@ public class ComponentTagEntity {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id", nullable = false)
+    @JsonIgnore // Prevents infinite recursion in JSON serialization
+    @ToString.Exclude // Prevents StackOverflow in toString()
+    @EqualsAndHashCode.Exclude // Prevents issues with hashCode/equals
     private ComponentEntity component;
 
     @Id

@@ -98,6 +98,21 @@ CREATE INDEX IF NOT EXISTS idx_components_brand
 CREATE INDEX IF NOT EXISTS idx_components_price
     ON components (price)^^
 
+CREATE INDEX IF NOT EXISTS idx_components_in_stock
+    ON components (in_stock)^^
+
+-- Composite index for common queries: category + price (useful for filtering by category and sorting/filtering by price)
+CREATE INDEX IF NOT EXISTS idx_components_category_price
+    ON components (category, price)^^
+
+-- Composite index for category + in_stock (useful for filtering available products in a category)
+CREATE INDEX IF NOT EXISTS idx_components_category_instock
+    ON components (category, in_stock)^^
+
+-- Index for name search (useful for LIKE queries)
+CREATE INDEX IF NOT EXISTS idx_components_name_lower
+    ON components (LOWER(name))^^
+
 CREATE INDEX IF NOT EXISTS idx_component_attributes_key
     ON component_attributes (attribute_key)^^
 

@@ -5,7 +5,6 @@ import com.pcBuilder.backend.dto.BuildSummaryDto;
 import com.pcBuilder.backend.dto.ComponentDto;
 import com.pcBuilder.backend.dto.ComponentSelectionDto;
 import com.pcBuilder.backend.model.build.Build;
-import com.pcBuilder.backend.model.component.Component;
 import com.pcBuilder.backend.model.component.ComponentCategory;
 import org.springframework.stereotype.Service;
 

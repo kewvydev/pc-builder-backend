@@ -1,10 +1,13 @@
 package com.pcBuilder.backend.model.component;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,13 +18,24 @@ import java.util.Set;
 
 /**
  * JPA Entity representing a hardware component stored in PostgreSQL.
+ * 
+ * PERFORMANCE NOTES:
+ * - attributes and tags are LAZY loaded to avoid N+1 queries
+ * - Use ComponentListDto for listings (avoids loading collections)
+ * - For full details, use separate queries for attributes and tags to avoid Cartesian Product
  */
 @Entity
-@Table(name = "components")
+@Table(name = "components", indexes = {
+    @Index(name = "idx_components_category", columnList = "category"),
+    @Index(name = "idx_components_brand", columnList = "brand"),
+    @Index(name = "idx_components_price", columnList = "price"),
+    @Index(name = "idx_components_in_stock", columnList = "in_stock")
+})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ComponentEntity {
 
     @Id
@@ -68,10 +82,14 @@ public class ComponentEntity {
 
     @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude // Prevents lazy loading in toString()
+    @EqualsAndHashCode.Exclude // Prevents lazy loading in hashCode/equals
     private List<ComponentAttributeEntity> attributes = new ArrayList<>();
 
     @OneToMany(mappedBy = "component", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude // Prevents lazy loading in toString()
+    @EqualsAndHashCode.Exclude // Prevents lazy loading in hashCode/equals
     private Set<ComponentTagEntity> tags = new HashSet<>();
 
     @PrePersist
