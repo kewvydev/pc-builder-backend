@@ -23,6 +23,24 @@ public class GlobalExceptionHandler {
 
         private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ErrorResponse> handleAuthenticationException(
+                        AuthenticationException ex,
+                        HttpServletRequest request) {
+
+                log.warn("Authentication failed: {}", ex.getMessage());
+
+                ErrorResponse error = ErrorResponse.builder()
+                                .status(HttpStatus.UNAUTHORIZED.value())
+                                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
+                                .message(ex.getMessage())
+                                .path(request.getRequestURI())
+                                .timestamp(Instant.now())
+                                .build();
+
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
         @ExceptionHandler(ResourceNotFoundException.class)
         public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
                         ResourceNotFoundException ex,

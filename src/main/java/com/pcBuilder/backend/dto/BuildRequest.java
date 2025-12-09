@@ -16,6 +16,13 @@ public class BuildRequest {
 
     private Double budget;
 
+    private String imageUrl;
+
+    private String userEmail;
+    private String userNickname;
+
+    private Boolean recommended;
+
     @NotEmpty
     @Valid
     private List<ComponentSelectionDto> components = new ArrayList<>();

@@ -1,6 +1,8 @@
 package com.pcBuilder.backend.repository;
 
 import com.pcBuilder.backend.model.build.BuildEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,6 +39,16 @@ public interface BuildRepository extends JpaRepository<BuildEntity, UUID> {
      * Find builds ordered by creation date descending (most recent first).
      */
     List<BuildEntity> findAllByOrderByCreatedAtDesc();
+
+    /**
+     * Find builds ordered by creation date descending (paginated).
+     */
+    Page<BuildEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    /**
+     * Find recommended builds ordered by creation date descending (paginated).
+     */
+    Page<BuildEntity> findByRecommendedTrueOrderByCreatedAtDesc(Pageable pageable);
 
     /**
      * Find builds ordered by total price ascending.

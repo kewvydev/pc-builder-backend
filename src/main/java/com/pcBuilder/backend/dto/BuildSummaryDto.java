@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,6 +19,12 @@ public class BuildSummaryDto {
     private String name;
     private double totalPrice;
     private Double budget;
+    private String imageUrl;
+    private String userEmail;
+    private String userNickname;
+    private Boolean recommended;
+    private Instant createdAt;
+    private Instant updatedAt;
     @Builder.Default
     private List<ComponentDto> components = Collections.emptyList();
     @Builder.Default

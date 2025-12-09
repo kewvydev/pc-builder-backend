@@ -3,6 +3,7 @@ package com.pcBuilder.backend.controller;
 import com.pcBuilder.backend.dto.BuildRequest;
 import com.pcBuilder.backend.dto.BuildSummaryDto;
 import com.pcBuilder.backend.dto.ComponentSelectionDto;
+import com.pcBuilder.backend.dto.PagedResponse;
 import com.pcBuilder.backend.mapper.BuildMapper;
 import com.pcBuilder.backend.model.build.Build;
 import com.pcBuilder.backend.model.component.ComponentCategory;
@@ -11,6 +12,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 
@@ -54,6 +58,40 @@ public class BuildController {
     public ResponseEntity<List<BuildSummaryDto>> getAll() {
         List<Build> builds = buildService.getAll();
         return ResponseEntity.ok(buildMapper.toDtoList(builds));
+    }
+
+    /**
+     * Get recent community builds (most recent first) with pagination.
+     */
+    @GetMapping("/community")
+    public ResponseEntity<PagedResponse<BuildSummaryDto>> getCommunityBuilds(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 50);
+
+        Page<Build> result = buildService.getRecentBuilds(PageRequest.of(pageNumber, pageSize));
+        List<BuildSummaryDto> content = buildMapper.toDtoList(result.getContent());
+
+        return ResponseEntity.ok(PagedResponse.from(result, content));
+    }
+
+    /**
+     * Get recommended builds (admin curated) with pagination.
+     */
+    @GetMapping("/recommended")
+    public ResponseEntity<PagedResponse<BuildSummaryDto>> getRecommended(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
+
+        int pageNumber = Math.max(page, 0);
+        int pageSize = Math.min(Math.max(size, 1), 50);
+
+        Page<Build> result = buildService.getRecommended(PageRequest.of(pageNumber, pageSize));
+        List<BuildSummaryDto> content = buildMapper.toDtoList(result.getContent());
+
+        return ResponseEntity.ok(PagedResponse.from(result, content));
     }
 
     /**
@@ -157,5 +195,23 @@ public class BuildController {
     public ResponseEntity<Boolean> isComplete(@PathVariable String id) {
         Build build = buildService.get(id);
         return ResponseEntity.ok(build.isComplete());
+    }
+
+    /**
+     * Dispara el análisis de compatibilidad en segundo plano.
+     */
+    @PostMapping("/{id}/analyze-async")
+    public ResponseEntity<String> analyzeAsync(@PathVariable String id) {
+        buildService.analyzeBuildAsync(id);
+        return ResponseEntity.accepted().body("Análisis en proceso para build " + id);
+    }
+
+    /**
+     * Dispara el recálculo masivo de builds en segundo plano.
+     */
+    @PostMapping("/recalculate/async")
+    public ResponseEntity<String> recalculateAsync() {
+        buildService.recalculateAllBuildsAsync();
+        return ResponseEntity.accepted().body("Recalculo masivo en proceso");
     }
 }

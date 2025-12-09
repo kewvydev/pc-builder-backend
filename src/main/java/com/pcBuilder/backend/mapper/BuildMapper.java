@@ -42,6 +42,12 @@ public class BuildMapper {
                 .name(build.getName())
                 .totalPrice(build.getTotalPrice())
                 .budget(build.getBudget())
+                .imageUrl(build.getImageUrl())
+                .userEmail(build.getUserEmail())
+                .userNickname(build.getUserNickname())
+                .recommended(build.getRecommended())
+                .createdAt(build.getCreatedAt())
+                .updatedAt(build.getUpdatedAt())
                 .components(componentDtos)
                 .compatibilityAlerts(build.getAlerts())
                 .recommendations(build.getRecommendations())
@@ -61,6 +67,10 @@ public class BuildMapper {
         return Build.builder()
                 .name(request.getName())
                 .budget(request.getBudget())
+                .imageUrl(request.getImageUrl())
+                .userEmail(request.getUserEmail())
+                .userNickname(request.getUserNickname())
+                .recommended(request.getRecommended())
                 .selectedComponents(new EnumMap<>(ComponentCategory.class))
                 .build();
     }

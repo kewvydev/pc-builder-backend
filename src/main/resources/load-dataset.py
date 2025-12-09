@@ -72,6 +72,10 @@ ALIAS_MAP = {
 CATEGORY_MAP = {
     "cpu": "CPU",
     "processor": "CPU",
+    "cpu_cooler": "CPU_COOLER",
+    "cpu-cooler": "CPU_COOLER",
+    "cooler": "CPU_COOLER",
+    "cooling": "CPU_COOLER",
     "gpu": "GPU",
     "graphics_card": "GPU",
     "video_card": "GPU",

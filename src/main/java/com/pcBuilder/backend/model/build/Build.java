@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -34,6 +35,13 @@ public class Build {
     private Double estimatedPowerDraw;
     private Double budget;
     private Double totalPrice;
+    private String imageUrl;
+    private String userEmail;
+    private String userNickname;
+    @Builder.Default
+    private Boolean recommended = Boolean.FALSE;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public double getTotalPrice() {
         if (totalPrice != null) {

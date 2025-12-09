@@ -1,6 +1,7 @@
 package com.pcBuilder.backend.service;
 
 import com.pcBuilder.backend.dto.BuildRequest;
+import com.pcBuilder.backend.exception.AuthenticationException;
 import com.pcBuilder.backend.exception.ResourceNotFoundException;
 import com.pcBuilder.backend.exception.ValidationException;
 import com.pcBuilder.backend.model.build.Build;
@@ -9,9 +10,13 @@ import com.pcBuilder.backend.model.build.BuildEntity;
 import com.pcBuilder.backend.model.compatibility.CompatibilityRule;
 import com.pcBuilder.backend.model.component.Component;
 import com.pcBuilder.backend.model.component.ComponentCategory;
+import com.pcBuilder.backend.repository.AppUserRepository;
 import com.pcBuilder.backend.repository.BuildRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -37,10 +43,12 @@ public class BuildService {
     private final List<CompatibilityRule> compatibilityRules = new ArrayList<>();
     private final BuildRepository buildRepository;
     private final ComponentService componentService;
+    private final AppUserRepository appUserRepository;
 
-    public BuildService(BuildRepository buildRepository, ComponentService componentService) {
+    public BuildService(BuildRepository buildRepository, ComponentService componentService, AppUserRepository appUserRepository) {
         this.buildRepository = buildRepository;
         this.componentService = componentService;
+        this.appUserRepository = appUserRepository;
         registerDefaultRules();
     }
 
@@ -89,6 +97,35 @@ public class BuildService {
     }
 
     /**
+     * Ejecuta el análisis de compatibilidad en otro hilo.
+     */
+    @Async
+    @Transactional(readOnly = true)
+    public CompletableFuture<Build> analyzeBuildAsync(String id) {
+        Build build = get(id);
+        simulateHeavyComputation();
+        Build analyzed = analyzeBuild(build);
+        return CompletableFuture.completedFuture(analyzed);
+    }
+
+    /**
+     * Recalcula todos los builds de manera asíncrona (operación pesada).
+     */
+    @Async
+    public CompletableFuture<Integer> recalculateAllBuildsAsync() {
+        List<BuildEntity> entities = buildRepository.findAll();
+        int processed = 0;
+        for (BuildEntity entity : entities) {
+            Build build = entityToDomain(entity);
+            analyzeBuild(build);
+            buildRepository.save(BuildEntity.fromDomain(build));
+            processed++;
+        }
+        log.info("Recalculated {} builds asynchronously", processed);
+        return CompletableFuture.completedFuture(processed);
+    }
+
+    /**
      * Delete a build by ID.
      */
     public void delete(String id) {
@@ -134,8 +171,16 @@ public class BuildService {
         Build build = Build.builder()
                 .name(request.getName())
                 .budget(request.getBudget())
+                .imageUrl(request.getImageUrl())
+                .userEmail(request.getUserEmail())
+                .userNickname(request.getUserNickname())
+                .recommended(Boolean.TRUE.equals(request.getRecommended()))
                 .selectedComponents(new EnumMap<>(ComponentCategory.class))
                 .build();
+
+        if (Boolean.TRUE.equals(build.getRecommended())) {
+            validateAdmin(build.getUserEmail());
+        }
 
         // Resolve and add components
         request.getComponents().forEach(selection -> {
@@ -177,6 +222,24 @@ public class BuildService {
         return buildRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(this::entityToDomain)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Get recent builds ordered by creation date with pagination.
+     */
+    @Transactional(readOnly = true)
+    public Page<Build> getRecentBuilds(Pageable pageable) {
+        return buildRepository.findAllByOrderByCreatedAtDesc(pageable)
+                .map(this::entityToDomain);
+    }
+
+    /**
+     * Get recommended builds (admin curated) ordered by creation date.
+     */
+    @Transactional(readOnly = true)
+    public Page<Build> getRecommended(Pageable pageable) {
+        return buildRepository.findByRecommendedTrueOrderByCreatedAtDesc(pageable)
+                .map(this::entityToDomain);
     }
 
     /**
@@ -254,6 +317,18 @@ public class BuildService {
                 .build());
     }
 
+    private void validateAdmin(String email) {
+        if (email == null || email.isBlank()) {
+            throw new AuthenticationException("Se requiere usuario administrador para publicar recomendados");
+        }
+        boolean isAdmin = appUserRepository.findByEmailIgnoreCase(email)
+                .map(user -> Boolean.TRUE.equals(user.getIsAdmin()))
+                .orElse(false);
+        if (!isAdmin) {
+            throw new AuthenticationException("Solo un administrador puede publicar recomendados");
+        }
+    }
+
     private void applyMetrics(Build build) {
         Map<ComponentCategory, Component> selections = build.getSelections();
 
@@ -291,6 +366,7 @@ public class BuildService {
             case RAM -> 10.0;
             case STORAGE -> 15.0;
             case MOTHERBOARD -> 50.0;
+            case CPU_COOLER -> 0.0;
             case PSU, CASE, MONITOR, KEYBOARD, MOUSE, SPEAKERS, OS -> 0.0;
         };
     }
@@ -361,6 +437,17 @@ public class BuildService {
         }
         if (build.getRecommendations() == null) {
             build.setRecommendations(new ArrayList<>());
+        }
+    }
+
+    /**
+     * Simula trabajo intensivo para casos de uso donde el análisis es costoso.
+     */
+    private void simulateHeavyComputation() {
+        try {
+            Thread.sleep(500L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

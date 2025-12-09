@@ -8,6 +8,7 @@ import java.util.EnumSet;
  */
 public enum ComponentCategory {
     CPU("cpu", "Procesador"),
+    CPU_COOLER("cpu-cooler", "Refrigeración CPU"),
     GPU("gpu", "Tarjeta de video"),
     MONITOR("monitor", "Monitor"),
     KEYBOARD("keyboard", "Teclado"),

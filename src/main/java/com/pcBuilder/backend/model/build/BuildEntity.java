@@ -40,6 +40,19 @@ public class BuildEntity {
     @Column(name = "total_price", precision = 12, scale = 2)
     private BigDecimal totalPrice;
 
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
+
+    @Column(name = "user_email", length = 255)
+    private String userEmail;
+
+    @Column(name = "user_nickname", length = 255)
+    private String userNickname;
+
+    @Builder.Default
+    @Column(name = "recommended", nullable = false)
+    private Boolean recommended = Boolean.FALSE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -97,6 +110,12 @@ public class BuildEntity {
                 .estimatedPowerDraw(this.estimatedPowerDraw != null ? this.estimatedPowerDraw.doubleValue() : null)
                 .selectedComponents(selectedComponents)
                 .totalPrice(this.totalPrice != null ? this.totalPrice.doubleValue() : 0.0)
+                .imageUrl(this.imageUrl)
+                .userEmail(this.userEmail)
+                .userNickname(this.userNickname)
+                .recommended(Boolean.TRUE.equals(this.recommended))
+                .createdAt(this.createdAt)
+                .updatedAt(this.updatedAt)
                 .build();
 
         // Convert alerts
@@ -124,6 +143,12 @@ public class BuildEntity {
                 .budget(build.getBudget() != null ? BigDecimal.valueOf(build.getBudget()) : null)
                 .estimatedPowerDraw(build.getEstimatedPowerDraw() != null ? BigDecimal.valueOf(build.getEstimatedPowerDraw()) : null)
                 .totalPrice(BigDecimal.valueOf(build.getTotalPrice()))
+                .imageUrl(build.getImageUrl())
+                .userEmail(build.getUserEmail())
+                .userNickname(build.getUserNickname())
+                .recommended(Boolean.TRUE.equals(build.getRecommended()))
+                .createdAt(build.getCreatedAt())
+                .updatedAt(build.getUpdatedAt())
                 .build();
 
         // Convert selected components
