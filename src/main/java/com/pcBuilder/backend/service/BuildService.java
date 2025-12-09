@@ -291,7 +291,7 @@ public class BuildService {
             case RAM -> 10.0;
             case STORAGE -> 15.0;
             case MOTHERBOARD -> 50.0;
-            case PSU, CASE -> 0.0;
+            case PSU, CASE, MONITOR, KEYBOARD, MOUSE, SPEAKERS, OS -> 0.0;
         };
     }
 
@@ -300,8 +300,9 @@ public class BuildService {
             double estimatedPower) {
         List<String> recommendations = new ArrayList<>();
         Set<ComponentCategory> missing = EnumSet.noneOf(ComponentCategory.class);
+        Set<ComponentCategory> requiredCategories = ComponentCategory.requiredForBuild();
 
-        for (ComponentCategory category : ComponentCategory.values()) {
+        for (ComponentCategory category : requiredCategories) {
             if (!selections.containsKey(category)) {
                 missing.add(category);
             }

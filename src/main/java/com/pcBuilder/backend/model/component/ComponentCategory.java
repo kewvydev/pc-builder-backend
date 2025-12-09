@@ -1,6 +1,7 @@
 package com.pcBuilder.backend.model.component;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 
 /**
  * Supported hardware categories handled by the application.
@@ -8,6 +9,11 @@ import java.util.Arrays;
 public enum ComponentCategory {
     CPU("cpu", "Procesador"),
     GPU("gpu", "Tarjeta de video"),
+    MONITOR("monitor", "Monitor"),
+    KEYBOARD("keyboard", "Teclado"),
+    MOUSE("mouse", "Mouse"),
+    SPEAKERS("speakers", "Parlantes"),
+    OS("os", "Sistema operativo"),
     MOTHERBOARD("motherboard", "Placa base"),
     RAM("ram", "Memoria RAM"),
     STORAGE("storage", "Almacenamiento"),
@@ -54,5 +60,13 @@ public enum ComponentCategory {
                         || category.slug.equalsIgnoreCase(value))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * Categories that are considered essential for a PC build.
+     * Optional items (e.g., monitor) are intentionally excluded.
+     */
+    public static EnumSet<ComponentCategory> requiredForBuild() {
+        return EnumSet.of(CPU, GPU, MOTHERBOARD, RAM, STORAGE, PSU, CASE);
     }
 }

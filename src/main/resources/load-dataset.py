@@ -86,6 +86,12 @@ CATEGORY_MAP = {
     "power_supply": "PSU",
     "case": "CASE",
     "chassis": "CASE",
+    "keyboard": "KEYBOARD",
+    "mouse": "MOUSE",
+    "speakers": "SPEAKERS",
+    "os": "OS",
+    "operating_system": "OS",
+    "operating-system": "OS",
 }
 
 

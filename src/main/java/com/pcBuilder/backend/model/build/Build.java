@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +56,8 @@ public class Build {
     }
 
     public boolean isComplete() {
-        return selectedComponents.size() == ComponentCategory.values().length;
+        EnumSet<ComponentCategory> required = ComponentCategory.requiredForBuild();
+        return selectedComponents.keySet().containsAll(required);
     }
 
     // Convenience methods for backward compatibility
